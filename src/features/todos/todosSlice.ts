@@ -9,6 +9,14 @@ import { StatusFilters } from '../filters/filtersSlice'
 
 const todosAdapter = createEntityAdapter()
 
+interface Todo {
+
+}
+
+interface TodoSliceState {
+
+}
+
 const initialState = todosAdapter.getInitialState({
   status: 'idle',
 })
@@ -19,10 +27,21 @@ export const fetchTodos = createAsyncThunk('todos/fetchTodos', async () => {
   return response.todos
 })
 
+function sleep(milliseconds: any) {
+  const date = Date.now();
+  let currentDate = null;
+  do {
+    currentDate = Date.now();
+  } while (currentDate - date < milliseconds);
+}
+
 export const saveNewTodo = createAsyncThunk(
   'todos/saveNewTodo',
   async (text) => {
     const initialTodo = { text }
+    console.log("sending request...")
+    sleep(3000)
+    console.log("done sending request.")
     const response = await client.post('/fakeApi/todos', { todo: initialTodo })
     return response.todo
   }
@@ -34,30 +53,31 @@ const todosSlice = createSlice({
   reducers: {
     todoToggled(state, action) {
       const todoId = action.payload
-      const todo = state.entities[todoId]
+      const todo: any = state.entities[todoId]
       todo.completed = !todo.completed
     },
     todoColorSelected: {
-      reducer(state, action) {
+      reducer(state: any, action: any) {
         const { color, todoId } = action.payload
         state.entities[todoId].color = color
       },
-      prepare(todoId, color) {
+      prepare(todoId: any, color: any) {
         return {
           payload: { todoId, color },
         }
       },
     },
     todoDeleted: todosAdapter.removeOne,
+    todoAdded: todosAdapter.addOne,
     allTodosCompleted(state, action) {
-      Object.values(state.entities).forEach((todo) => {
+      Object.values(state.entities).forEach((todo: any) => {
         todo.completed = true
       })
     },
     completedTodosCleared(state, action) {
       const completedIds = Object.values(state.entities)
-        .filter((todo) => todo.completed)
-        .map((todo) => todo.id)
+        .filter((todo: any) => todo.completed)
+        .map((todo: any) => todo.id)
       todosAdapter.removeMany(state, completedIds)
     },
   },
@@ -88,21 +108,21 @@ export default todosSlice.reducer
 export const {
   selectAll: selectTodos,
   selectById: selectTodoById,
-} = todosAdapter.getSelectors((state) => state.todos)
+} = todosAdapter.getSelectors((state: any) => state.todos)
 
 export const selectTodoIds = createSelector(
   // First, pass one or more "input selector" functions:
   selectTodos,
   // Then, an "output selector" that receives all the input results as arguments
   // and returns a final result value
-  (todos) => todos.map((todo) => todo.id)
+  (todos) => todos.map((todo: any) => todo.id)
 )
 
 export const selectFilteredTodos = createSelector(
   // First input selector: all todos
   selectTodos,
   // Second input selector: all filter values
-  (state) => state.filters,
+  (state: any) => state.filters,
   // Output selector: receives both values
   (todos, filters) => {
     const { status, colors } = filters
@@ -113,7 +133,7 @@ export const selectFilteredTodos = createSelector(
 
     const completedStatus = status === StatusFilters.Completed
     // Return either active or completed todos based on filter
-    return todos.filter((todo) => {
+    return todos.filter((todo: any) => {
       const statusMatches =
         showAllCompletions || todo.completed === completedStatus
       const colorMatches = colors.length === 0 || colors.includes(todo.color)
@@ -126,5 +146,5 @@ export const selectFilteredTodoIds = createSelector(
   // Pass our other memoized selector as an input
   selectFilteredTodos,
   // And derive data in the output selector
-  (filteredTodos) => filteredTodos.map((todo) => todo.id)
+  (filteredTodos) => filteredTodos.map((todo: any) => todo.id)
 )
